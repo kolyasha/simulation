@@ -6,6 +6,7 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<link rel="stylesheet" type="text/css" href="style.css">
 	<script type="text/javascript" src="gl-matrix.js"></script>
+	<script type="text/javascript" src="webgl-utils.js"></script>
 </head>
 
 <body onload="start();">
@@ -19,34 +20,41 @@
 		<a href="task7.html" class="nav__btn">Task 7</a>
 		<a href="task8.html" class="nav__btn">Task 8</a>
 	</nav>
-	<h3>Task 1: Создать окно приложения, контекст OpenGL. Очистить фон и отрисовать одну точку.</h3>
+	<h3>Task 2: Подготовить массив данных для отрисовки, обновлять массив по таймеру. Отрисовать точки решетки на водной поверхности. Сделать анимацию. Положение камеры считать фиксированным: камера смотрит на воду сверху, перпендикулярно поверхности.</h3>
 	<canvas id="canvas" width="500" height="500"></canvas>
+	<input type="text" id="amplitude" value="0.01" size="5" />Wave amplitude<br/>
 </body>
 
 
-
+<!-- vec4 to_clipspace(vec3 position) {
+	vec4 position_view=u_world_view*vec4(v_position,1);
+	float z=1.0-(1.0+position_view.z)/(1.0+u_eye_height);
+	return vec4(position_view.xy,-position_view.z*z/2.0,z);
+} -->
 
 <script id="shader-vs" type="x-shader/x-vertex">
-attribute vec2 a_position;
+	attribute vec2 a_position;
+	attribute float a_height;
 
-void main(void) {
-	gl_Position = vec4(a_position.xy,1,1);
-	gl_PointSize = 1.0;
-}
+	void main(void) {
+		float z = (float(1) - a_height) * 0.5;
+		gl_Position=vec4(a_position.xy,z,z);
+		gl_PointSize=1.0;
+	}
 </script>
-
-
 
 
 <script id="shader-fs" type="x-shader/x-fragment">
-void main(void) {
-	gl_FragColor = vec4(1,1,1,0);
-}
+	void main(void) {
+		gl_FragColor = vec4(1,1,1,0);
+	}
 </script>
 
 
-
 <script type="text/javascript">
+
+	var nx=100;
+	var ny=100;
 
 	var gl; // глобальная переменная для контекста WebGL
 
@@ -135,29 +143,91 @@ void main(void) {
 
         shaderProgram.vertexPositionAttribute = gl.getAttribLocation(shaderProgram, "a_position");
         gl.enableVertexAttribArray(shaderProgram.vertexPositionAttribute);
+
+		shaderProgram.vertexHeightAttribute = gl.getAttribLocation(shaderProgram, "a_height");
+	    gl.enableVertexAttribArray(shaderProgram.vertexHeightAttribute);
     }
 
-    var pointBuffer;
+	var vertexPositionBuffer;
+	var vertexHeightBuffer;
+	var vertexHeightData;
 
     var initBuffers = function() {
-		pointBuffer = gl.createBuffer();
+		vertexHeightData=new Float32Array(nx*ny);
 
+		var vertexPositionData = new Float32Array(nx*ny*2);
 
-		var vertices = [0, 0, 0];
+		for(var x=0; x<nx; x++) for(var y=0; y<ny; y++) {
+			vertexPositionData[0+2*(y+x*ny)]=2*x/(nx-1)-1;
+			vertexPositionData[1+2*(y+x*ny)]=2*y/(ny-1)-1;
+		};
 
-		gl.bindBuffer(gl.ARRAY_BUFFER, pointBuffer);
-		gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
+		vertexPositionBuffer = gl.createBuffer();
+	    gl.bindBuffer(gl.ARRAY_BUFFER, vertexPositionBuffer);
+	    gl.bufferData(gl.ARRAY_BUFFER, vertexPositionData, gl.STATIC_DRAW);
+	    vertexPositionBuffer.itemSize = 2;
+	    vertexPositionBuffer.numItems = nx*ny;
+
+		vertexHeightBuffer = gl.createBuffer();
+	    gl.bindBuffer(gl.ARRAY_BUFFER, vertexHeightBuffer);
+	    gl.bufferData(gl.ARRAY_BUFFER, vertexHeightData, gl.DYNAMIC_DRAW);
+	    vertexHeightBuffer.itemSize = 1;
+	    vertexHeightBuffer.numItems = nx*ny;
     }
 
 
     var drawScene = function() {
     	gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
-		gl.bindBuffer(gl.ARRAY_BUFFER, pointBuffer);
-		gl.vertexAttribPointer(shaderProgram.vertexPositionAttribute, 3, gl.FLOAT, false, 0, 0);
+		gl.bindBuffer(gl.ARRAY_BUFFER, vertexPositionBuffer);
+		gl.vertexAttribPointer(shaderProgram.vertexPositionAttribute, vertexPositionBuffer.itemSize, gl.FLOAT, false, 0, 0);
 
-		gl.drawArrays(gl.POINTS, 0, 1);
+		gl.bindBuffer(gl.ARRAY_BUFFER, vertexHeightBuffer);
+		gl.vertexAttribPointer(shaderProgram.vertexHeightAttribute, vertexHeightBuffer.itemSize, gl.FLOAT, false, 0, 0);
+
+		gl.drawArrays(gl.POINTS, 0, vertexPositionBuffer.numItems);
     }
+
+	function getValue(name) {
+	    return parseFloat(document.getElementById(name).value);
+	}
+
+
+	function computeHeight(time) {
+	    var amplitude =getValue("amplitude");
+	    var wave_length=0.3;
+	    var speed=0.003;
+
+	    var omega=2*Math.PI/wave_length;
+	    for(var x=0; x<nx; x++) for(var y=0; y<ny; y++) {
+	        var idx=x*ny+y;
+	        var posX=2*x/(nx-1)-1;
+	        var posY=2*y/(ny-1)-1;
+	        var d=Math.sqrt(posX*posX+posY*posY);
+	        var arg=omega*d-time*speed;
+			vertexHeightData[idx]=amplitude*Math.cos(arg);
+	    };
+	}
+
+	var lastTime = 0;
+	function animate() {
+	    var timeNow = new Date().getTime();
+	    if (lastTime != 0) {
+	        var elapsed = timeNow - lastTime;
+	    }
+	    lastTime = timeNow;
+
+	    computeHeight(timeNow);
+	    gl.bindBuffer(gl.ARRAY_BUFFER, vertexHeightBuffer);
+	    gl.bufferData(gl.ARRAY_BUFFER, vertexHeightData, gl.DYNAMIC_DRAW);
+	}
+
+
+	function tick() {
+	    requestAnimFrame(tick);
+	    animate();
+		drawScene();
+	}
 
 
     function start() {
@@ -177,11 +247,10 @@ void main(void) {
         initShaders();
         initBuffers();
 
-        drawScene();
+        tick();
     }
 
 
 </script>
-
 
 </html>
