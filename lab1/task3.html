@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-	<title>Task 2</title>
+	<title>Task 3</title>
 	<meta charset="utf-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<link rel="stylesheet" type="text/css" href="style.css">
@@ -20,10 +20,17 @@
 		<a href="task7.html" class="nav__btn">Task 7</a>
 		<a href="task8.html" class="nav__btn">Task 8</a>
 	</nav>
-	<h3>Task 2: Подготовить массив данных для отрисовки, обновлять массив по таймеру. Отрисовать точки решетки на водной поверхности. Сделать анимацию. Положение камеры считать фиксированным: камера смотрит на воду сверху, перпендикулярно поверхности.</h3>
+	<h3>Task 3: Отрисовать отрезки, соединяющие соседние узлы решетки (wireframe). Убедиться в корректности изображения перспективы.</h3>
 	<canvas id="canvas" width="500" height="500"></canvas>
 	<input type="text" id="amplitude" value="0.01" size="5" />Wave amplitude<br/>
 </body>
+
+
+<!-- vec4 to_clipspace(vec3 position) {
+	vec4 position_view=u_world_view*vec4(v_position,1);
+	float z=1.0-(1.0+position_view.z)/(1.0+u_eye_height);
+	return vec4(position_view.xy,-position_view.z*z/2.0,z);
+} -->
 
 <script id="shader-vs" type="x-shader/x-vertex">
 	attribute vec2 a_position;
@@ -141,25 +148,41 @@
 	    gl.enableVertexAttribArray(shaderProgram.vertexHeightAttribute);
     }
 
+	var vertexIndexBuffer;
 	var vertexPositionBuffer;
 	var vertexHeightBuffer;
+
 	var vertexHeightData;
 
     var initBuffers = function() {
 		vertexHeightData=new Float32Array(nx*ny);
 
 		var vertexPositionData = new Float32Array(nx*ny*2);
+		var vertexIndicesData = new Uint16Array((nx-1)*(ny-1)*4);
 
 		for(var x=0; x<nx; x++) for(var y=0; y<ny; y++) {
 			vertexPositionData[0+2*(y+x*ny)]=2*x/(nx-1)-1;
 			vertexPositionData[1+2*(y+x*ny)]=2*y/(ny-1)-1;
 		};
 
+		for(var x=0; x<nx-1; x++) for(var y=0; y<ny-1; y++) {
+	        vertexIndicesData[0+4*(y+x*(ny-1))]=y+x*ny;
+	        vertexIndicesData[1+4*(y+x*(ny-1))]=y+(x+1)*ny;
+			vertexIndicesData[2+4*(y+x*(ny-1))]=y+x*ny;
+			vertexIndicesData[3+4*(y+x*(ny-1))]=(y+1)+x*ny;
+	    };
+
 		vertexPositionBuffer = gl.createBuffer();
 	    gl.bindBuffer(gl.ARRAY_BUFFER, vertexPositionBuffer);
 	    gl.bufferData(gl.ARRAY_BUFFER, vertexPositionData, gl.STATIC_DRAW);
 	    vertexPositionBuffer.itemSize = 2;
 	    vertexPositionBuffer.numItems = nx*ny;
+
+		vertexIndexBuffer = gl.createBuffer();
+	    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, vertexIndexBuffer);
+	    gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, vertexIndicesData, gl.STATIC_DRAW);
+	    vertexIndexBuffer.itemSize = 1;
+	    vertexIndexBuffer.numItems = 4*(nx-1)*(ny-1);
 
 		vertexHeightBuffer = gl.createBuffer();
 	    gl.bindBuffer(gl.ARRAY_BUFFER, vertexHeightBuffer);
@@ -178,7 +201,8 @@
 		gl.bindBuffer(gl.ARRAY_BUFFER, vertexHeightBuffer);
 		gl.vertexAttribPointer(shaderProgram.vertexHeightAttribute, vertexHeightBuffer.itemSize, gl.FLOAT, false, 0, 0);
 
-		gl.drawArrays(gl.POINTS, 0, vertexPositionBuffer.numItems);
+		gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, vertexIndexBuffer);
+		gl.drawElements(gl.LINES, vertexIndexBuffer.numItems, gl.UNSIGNED_SHORT, 0);
     }
 
 	function getValue(name) {
