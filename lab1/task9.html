@@ -33,8 +33,8 @@
 		<input type="text" id="eye_height" value="3.0" size="5" />Camera distance to water <br>
 		<input type="checkbox" id="diffused_flag" checked />Sun diffused light <br>
 		<input type="checkbox" id="reflected_flag" checked />Sun reflected light <br>
-		<input type="checkbox" id="sky_flag" checked />Reflected image of sky <br>
-	    <input type="checkbox" id="bed_flag" checked />Refracted image of seabed <br>
+		<input type="checkbox" id="sky_flag" checked />Clouds <br>
+	    <input type="checkbox" id="bed_flag" checked />Seabed <br>
 	    <input type="checkbox" id="depth_flag" checked />Ambient light in water <br>
 	</div>
 </body>
@@ -443,10 +443,6 @@
 	    var dx=2*event.movementX/canvas.width;
 	    var dy=2*event.movementY/canvas.height;
 	    rotate(dx,dy);
-	}
-
-	function log(txt) {
-	    document.getElementById("log").innerHTML=txt;
 	}
 
 	var touchX;

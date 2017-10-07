@@ -249,6 +249,7 @@ function initShaders() {
 
     shaderProgram.skyTextureUniform = gl.getUniformLocation(shaderProgram, "u_sky_texture");
     shaderProgram.bedTextureUniform = gl.getUniformLocation(shaderProgram, "u_bed_texture");
+
     shaderProgram.sunDirectionUniform = gl.getUniformLocation(shaderProgram, "u_sun_direction");
     shaderProgram.sunDiffusedColorUniform = gl.getUniformLocation(shaderProgram, "u_sun_diffused_color");
     shaderProgram.sunReflectedColorUniform = gl.getUniformLocation(shaderProgram, "u_sun_reflected_color");
@@ -519,7 +520,7 @@ function webGLStart() {
         <input type="checkbox" id="depth_flag" checked />Ambient light in water<br/>
         <input type="text" id="amplitude" value="0.01" size="5" />Wave amplitude<br/>
         <input type="text" id="eta" value="0.9" size="5" />Ratio of refractive indices<br/>
-        <input type="text" id="bed_depth" value="0.4" size="5" />Seabed dept h<br/>
+        <input type="text" id="bed_depth" value="0.4" size="5" />Seabed depth<br/>
         <input type="text" id="eye_height" value="0.4" size="5" />Camera distance to water<br/>
     </div>
     <br/>
