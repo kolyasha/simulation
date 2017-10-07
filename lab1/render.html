@@ -21,8 +21,8 @@ uniform float u_alpha;
 uniform float u_bed_depth;
 
 attribute vec2 a_position;
-attribute vec2 a_normal;
 attribute float a_height;
+attribute vec2 a_normal;
 
 varying vec3 v_normal;
 varying vec3 v_position;
@@ -519,7 +519,7 @@ function webGLStart() {
         <input type="checkbox" id="depth_flag" checked />Ambient light in water<br/>
         <input type="text" id="amplitude" value="0.01" size="5" />Wave amplitude<br/>
         <input type="text" id="eta" value="0.9" size="5" />Ratio of refractive indices<br/>
-        <input type="text" id="bed_depth" value="0.4" size="5" />Seabed depth<br/>
+        <input type="text" id="bed_depth" value="0.4" size="5" />Seabed dept h<br/>
         <input type="text" id="eye_height" value="0.4" size="5" />Camera distance to water<br/>
     </div>
     <br/>
