@@ -7,6 +7,7 @@
 	<link rel="stylesheet" type="text/css" href="style.css">
 	<script type="text/javascript" src="gl-matrix.js"></script>
 	<script type="text/javascript" src="webgl-utils.js"></script>
+	<script type="text/javascript" src="helper.js"></script>
 </head>
 
 <body onload="start();">
@@ -28,9 +29,10 @@
 	<div style="display:inline-block">
 		<input type="text" id="amplitude" value="0.01" size="5" />Wave amplitude <br>
 		<input type="text" id="eta" value="0.9" size="5" />Ratio of refractive indices <br>
-		<input type="text" id="bed_depth" value="1.0" size="5" />Seabed depth <br>
 		<input type="text" id="eye_height" value="3.0" size="5" />Camera distance to water <br>
-		<input type="checkbox" id="diffused_flag" checked />Sun diffused <br>
+		<input type="checkbox" id="diffused_flag" checked />Sun diffused light <br>
+		<input type="checkbox" id="reflected_flag" checked />Sun reflected light <br>
+		<input type="checkbox" id="sky_flag" checked />Reflected image of sky <br>
 	    <input type="checkbox" id="bed_flag" checked />Refracted image of seabed <br>
 	    <input type="checkbox" id="depth_flag" checked />Ambient light in water <br>
 	</div>
@@ -40,7 +42,6 @@
 	uniform float u_eye_height;
 	uniform mat4 u_world_view;
 	uniform float u_alpha;
-	uniform float u_bed_depth;
 
 	attribute vec2 a_position;
 	attribute float a_height;
@@ -75,8 +76,7 @@
 		vec3 refracted=normalize(u_alpha*cross(cr,normal)-normal*c2);
 		float c1=-dot(normal,from_eye);
 
-		float t=(-u_bed_depth-v_position.z)/refracted.z;
-		vec3 point_on_bed=v_position+t*refracted;
+		vec3 point_on_bed=v_position+refracted;
 		v_bed_texcoord=point_on_bed.xy+vec2(0.5,0.5);
 
 		float reflectance_s=pow((u_alpha*c1-c2)/(u_alpha*c1+c2),2.0);
@@ -233,7 +233,6 @@
 	    shaderProgram.eyeHeightUniform = gl.getUniformLocation(shaderProgram, "u_eye_height");
 	    shaderProgram.worldViewUniform = gl.getUniformLocation(shaderProgram, "u_world_view");
 	    shaderProgram.alphaUniform = gl.getUniformLocation(shaderProgram, "u_alpha");
-	    shaderProgram.bedDepthUniform = gl.getUniformLocation(shaderProgram, "u_bed_depth");
 
 	    shaderProgram.skyTextureUniform = gl.getUniformLocation(shaderProgram, "u_sky_texture");
 	    shaderProgram.bedTextureUniform = gl.getUniformLocation(shaderProgram, "u_bed_texture");
@@ -241,9 +240,11 @@
 	    shaderProgram.sunDirectionUniform = gl.getUniformLocation(shaderProgram, "u_sun_direction");
 	    shaderProgram.sunDiffusedColorUniform = gl.getUniformLocation(shaderProgram, "u_sun_diffused_color");
 	    shaderProgram.sunReflectedColorUniform = gl.getUniformLocation(shaderProgram, "u_sun_reflected_color");
+		shaderProgram.reflectedMultUniform = gl.getUniformLocation(shaderProgram, "u_reflected_mult");
 	    shaderProgram.diffusedMultUniform = gl.getUniformLocation(shaderProgram, "u_diffused_mult");
 	    shaderProgram.bedMultUniform = gl.getUniformLocation(shaderProgram, "u_bed_mult");
 	    shaderProgram.depthMultUniform = gl.getUniformLocation(shaderProgram, "u_depth_mult");
+		shaderProgram.skyMultUniform = gl.getUniformLocation(shaderProgram, "u_sky_mult");
     }
 
 	var vertexIndexBuffer;
@@ -305,14 +306,15 @@
 
 		gl.uniform1f(shaderProgram.eyeHeightUniform, getValue("eye_height"));
 	    gl.uniform1f(shaderProgram.alphaUniform, getValue("eta"));
-	    gl.uniform1f(shaderProgram.bedDepthUniform, getValue("bed_depth"));
 	    gl.uniform3fv(shaderProgram.sunDirectionUniform, normalize([1.0, 0.0, 0.1]));
 	    gl.uniform3f(shaderProgram.sunDiffusedColorUniform, 1.0, 0.8, 1.0);
 	    gl.uniform3f(shaderProgram.sunReflectedColorUniform, 1.0, 0.8, 0.6);
 
+		gl.uniform1f(shaderProgram.reflectedMultUniform, ifEnabled("reflected_flag",1.0));
 	    gl.uniform1f(shaderProgram.diffusedMultUniform, ifEnabled("diffused_flag",0.5));
 	    gl.uniform1f(shaderProgram.bedMultUniform, ifEnabled("bed_flag",1.0));
 	    gl.uniform1f(shaderProgram.depthMultUniform, ifEnabled("depth_flag",1.0));
+		gl.uniform1f(shaderProgram.skyMultUniform, ifEnabled("sky_flag",1.0));
 
 		setMatrices();
 
