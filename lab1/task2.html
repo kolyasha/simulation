@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html>
+
 <head>
 	<title>Task 2</title>
 	<meta charset="utf-8">
@@ -22,6 +23,7 @@
 		<a href="task9.html" class="nav__btn">Task 9</a>
 		<a href="task10.html" class="nav__btn">Task 10</a>
 		<a href="task11.html" class="nav__btn">Task 11</a>
+		<a href="task12.html" class="nav__btn">Skybox</a>
 	</nav>
 	<h3>Task 2: Подготовить массив данных для отрисовки, обновлять массив по таймеру. Отрисовать точки решетки на водной поверхности. Сделать анимацию. Положение камеры считать фиксированным: камера смотрит на воду сверху, перпендикулярно поверхности.</h3>
 	<canvas id="canvas" width="500" height="500"></canvas>
@@ -48,19 +50,17 @@
 
 
 <script type="text/javascript">
-
-	var nx=100;
-	var ny=100;
+	var nx = 100;
+	var ny = 100;
 
 	var gl; // глобальная переменная для контекста WebGL
 
-    var initWebGL = function(canvas) {
+	var initWebGL = function(canvas) {
 
 		try {
 			// Попытаться получить стандартный контекст. Если не получится, попробовать получить экспериментальный.
 			gl = canvas.getContext("webgl") || canvas.getContext("experimental-webgl");
-		}
-		catch(e) {}
+		} catch (e) {}
 
 		// Если мы не получили контекст GL, завершить работу
 		if (!gl) {
@@ -69,7 +69,7 @@
 		}
 
 		return gl;
-    }
+	}
 
 
 	var getShader = function(gl, id) {
@@ -84,7 +84,7 @@
 		theSource = "";
 		currentChild = shaderScript.firstChild;
 
-		while(currentChild) {
+		while (currentChild) {
 			if (currentChild.nodeType == currentChild.TEXT_NODE) {
 				theSource += currentChild.textContent;
 			}
@@ -118,62 +118,63 @@
 		return shader;
 	}
 
-    var shaderProgram;
+	var shaderProgram;
 
-    var initShaders = function() {
-        var fragmentShader = getShader(gl, "shader-fs");
-        var vertexShader = getShader(gl, "shader-vs");
+	var initShaders = function() {
+		var fragmentShader = getShader(gl, "shader-fs");
+		var vertexShader = getShader(gl, "shader-vs");
 
 		// создать шейдерную программу
 
-        shaderProgram = gl.createProgram();
-        gl.attachShader(shaderProgram, vertexShader);
-        gl.attachShader(shaderProgram, fragmentShader);
-        gl.linkProgram(shaderProgram);
+		shaderProgram = gl.createProgram();
+		gl.attachShader(shaderProgram, vertexShader);
+		gl.attachShader(shaderProgram, fragmentShader);
+		gl.linkProgram(shaderProgram);
 
-        if (!gl.getProgramParameter(shaderProgram, gl.LINK_STATUS)) {
+		if (!gl.getProgramParameter(shaderProgram, gl.LINK_STATUS)) {
 			alert("Unable to initialize the shader program.");
-        }
+		}
 
-        gl.useProgram(shaderProgram);
+		gl.useProgram(shaderProgram);
 
-        shaderProgram.vertexPositionAttribute = gl.getAttribLocation(shaderProgram, "a_position");
-        gl.enableVertexAttribArray(shaderProgram.vertexPositionAttribute);
+		shaderProgram.vertexPositionAttribute = gl.getAttribLocation(shaderProgram, "a_position");
+		gl.enableVertexAttribArray(shaderProgram.vertexPositionAttribute);
 
 		shaderProgram.vertexHeightAttribute = gl.getAttribLocation(shaderProgram, "a_height");
-	    gl.enableVertexAttribArray(shaderProgram.vertexHeightAttribute);
-    }
+		gl.enableVertexAttribArray(shaderProgram.vertexHeightAttribute);
+	}
 
 	var vertexPositionBuffer;
 	var vertexHeightBuffer;
 	var vertexHeightData;
 
-    var initBuffers = function() {
-		vertexHeightData=new Float32Array(nx*ny);
+	var initBuffers = function() {
+		vertexHeightData = new Float32Array(nx * ny);
 
-		var vertexPositionData = new Float32Array(nx*ny*2);
+		var vertexPositionData = new Float32Array(nx * ny * 2);
 
-		for(var x=0; x<nx; x++) for(var y=0; y<ny; y++) {
-			vertexPositionData[0+2*(y+x*ny)]=2*x/(nx-1)-1;
-			vertexPositionData[1+2*(y+x*ny)]=2*y/(ny-1)-1;
-		};
+		for (var x = 0; x < nx; x++)
+			for (var y = 0; y < ny; y++) {
+				vertexPositionData[0 + 2 * (y + x * ny)] = 2 * x / (nx - 1) - 1;
+				vertexPositionData[1 + 2 * (y + x * ny)] = 2 * y / (ny - 1) - 1;
+			};
 
 		vertexPositionBuffer = gl.createBuffer();
-	    gl.bindBuffer(gl.ARRAY_BUFFER, vertexPositionBuffer);
-	    gl.bufferData(gl.ARRAY_BUFFER, vertexPositionData, gl.STATIC_DRAW);
-	    vertexPositionBuffer.itemSize = 2;
-	    vertexPositionBuffer.numItems = nx*ny;
+		gl.bindBuffer(gl.ARRAY_BUFFER, vertexPositionBuffer);
+		gl.bufferData(gl.ARRAY_BUFFER, vertexPositionData, gl.STATIC_DRAW);
+		vertexPositionBuffer.itemSize = 2;
+		vertexPositionBuffer.numItems = nx * ny;
 
 		vertexHeightBuffer = gl.createBuffer();
-	    gl.bindBuffer(gl.ARRAY_BUFFER, vertexHeightBuffer);
-	    gl.bufferData(gl.ARRAY_BUFFER, vertexHeightData, gl.DYNAMIC_DRAW);
-	    vertexHeightBuffer.itemSize = 1;
-	    vertexHeightBuffer.numItems = nx*ny;
-    }
+		gl.bindBuffer(gl.ARRAY_BUFFER, vertexHeightBuffer);
+		gl.bufferData(gl.ARRAY_BUFFER, vertexHeightData, gl.DYNAMIC_DRAW);
+		vertexHeightBuffer.itemSize = 1;
+		vertexHeightBuffer.numItems = nx * ny;
+	}
 
 
-    var drawScene = function() {
-    	gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+	var drawScene = function() {
+		gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
 		gl.bindBuffer(gl.ARRAY_BUFFER, vertexPositionBuffer);
 		gl.vertexAttribPointer(shaderProgram.vertexPositionAttribute, vertexPositionBuffer.itemSize, gl.FLOAT, false, 0, 0);
@@ -182,71 +183,71 @@
 		gl.vertexAttribPointer(shaderProgram.vertexHeightAttribute, vertexHeightBuffer.itemSize, gl.FLOAT, false, 0, 0);
 
 		gl.drawArrays(gl.POINTS, 0, vertexPositionBuffer.numItems);
-    }
+	}
 
 	function getValue(name) {
-	    return parseFloat(document.getElementById(name).value);
+		return parseFloat(document.getElementById(name).value);
 	}
 
 
 	function computeHeight(time) {
-	    var amplitude =getValue("amplitude");
-	    var wave_length=0.3;
-	    var speed=0.003;
+		var amplitude = getValue("amplitude");
+		var wave_length = 0.3;
+		var speed = 0.003;
 
-	    var omega=2*Math.PI/wave_length;
-	    for(var x=0; x<nx; x++) for(var y=0; y<ny; y++) {
-	        var idx=x*ny+y;
-	        var posX=2*x/(nx-1)-1;
-	        var posY=2*y/(ny-1)-1;
-	        var d=Math.sqrt(posX*posX+posY*posY);
-	        var arg=omega*d-time*speed;
-			vertexHeightData[idx]=amplitude*Math.cos(arg);
-	    };
+		var omega = 2 * Math.PI / wave_length;
+		for (var x = 0; x < nx; x++)
+			for (var y = 0; y < ny; y++) {
+				var idx = x * ny + y;
+				var posX = 2 * x / (nx - 1) - 1;
+				var posY = 2 * y / (ny - 1) - 1;
+				var d = Math.sqrt(posX * posX + posY * posY);
+				var arg = omega * d - time * speed;
+				vertexHeightData[idx] = amplitude * Math.cos(arg);
+			};
 	}
 
 	var lastTime = 0;
-	function animate() {
-	    var timeNow = new Date().getTime();
-	    if (lastTime != 0) {
-	        var elapsed = timeNow - lastTime;
-	    }
-	    lastTime = timeNow;
 
-	    computeHeight(timeNow);
-	    gl.bindBuffer(gl.ARRAY_BUFFER, vertexHeightBuffer);
-	    gl.bufferData(gl.ARRAY_BUFFER, vertexHeightData, gl.DYNAMIC_DRAW);
+	function animate() {
+		var timeNow = new Date().getTime();
+		if (lastTime != 0) {
+			var elapsed = timeNow - lastTime;
+		}
+		lastTime = timeNow;
+
+		computeHeight(timeNow);
+		gl.bindBuffer(gl.ARRAY_BUFFER, vertexHeightBuffer);
+		gl.bufferData(gl.ARRAY_BUFFER, vertexHeightData, gl.DYNAMIC_DRAW);
 	}
 
 
 	function tick() {
-	    requestAnimFrame(tick);
-	    animate();
+		requestAnimFrame(tick);
+		animate();
 		drawScene();
 	}
 
 
-    function start() {
-        var canvas = document.getElementById("canvas");
+	function start() {
+		var canvas = document.getElementById("canvas");
 
-        gl = initWebGL(canvas); // инициализация контекста GL
+		gl = initWebGL(canvas); // инициализация контекста GL
 
 		// продолжать только если WebGL доступен и работает
 
 		if (gl) {
-			gl.clearColor(0.0, 0.0, 0.0, 1.0);                      // установить в качестве цвета очистки буфера цвета черный, полная непрозрачность
-			gl.enable(gl.DEPTH_TEST);                               // включает использование буфера глубины
-			gl.depthFunc(gl.LEQUAL);                                // определяет работу буфера глубины: более ближние объекты перекрывают дальние
-			gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);      // очистить буфер цвета и буфер глубины.
+			gl.clearColor(0.0, 0.0, 0.0, 1.0); // установить в качестве цвета очистки буфера цвета черный, полная непрозрачность
+			gl.enable(gl.DEPTH_TEST); // включает использование буфера глубины
+			gl.depthFunc(gl.LEQUAL); // определяет работу буфера глубины: более ближние объекты перекрывают дальние
+			gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT); // очистить буфер цвета и буфер глубины.
 		}
 
-        initShaders();
-        initBuffers();
+		initShaders();
+		initBuffers();
 
-        tick();
-    }
-
-
+		tick();
+	}
 </script>
 
 </html>
