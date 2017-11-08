@@ -1,0 +1,16 @@
+.nav{
+    display: block;
+    margin-top: 10px;
+}
+.nav__btn{
+    display: inline-block;
+    padding: 5px; 
+    margin: 0 5px 5px; 
+    outline: none; 
+    color: blue;
+    font-size: 16px;
+    font-weight: bold;
+}
+canvas{
+	border: none;
+}

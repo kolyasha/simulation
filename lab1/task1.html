@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Task 1</title>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<link rel="stylesheet" type="text/css" href="style.css">
+	<script type="text/javascript" src="gl-matrix.js"></script>
+</head>
+
+<body onload="start();">
+	<nav class="nav">
+		<a href="task1.html" class="nav__btn">Task 1</a>
+		<a href="task2.html" class="nav__btn">Task 2</a>
+		<a href="task3.html" class="nav__btn">Task 3</a>
+		<a href="task4.html" class="nav__btn">Task 4</a>
+		<a href="task5.html" class="nav__btn">Task 5</a>
+		<a href="task6.html" class="nav__btn">Task 6</a>
+		<a href="task7.html" class="nav__btn">Task 7</a>
+		<a href="task8.html" class="nav__btn">Task 8</a>
+		<a href="task9.html" class="nav__btn">Task 9</a>
+		<a href="task10.html" class="nav__btn">Task 10</a>
+		<a href="task11.html" class="nav__btn">Task 11</a>
+		<a href="task12.html" class="nav__btn">Skybox</a>
+	</nav>
+	<h3>Task 1: Создать окно приложения, контекст OpenGL. Очистить фон и отрисовать одну точку.</h3>
+	<canvas id="canvas" width="500" height="500"></canvas>
+</body>
+
+
+
+
+<script id="shader-vs" type="x-shader/x-vertex">
+attribute vec2 a_position;
+
+void main(void) {
+	gl_Position = vec4(a_position.xy,1,1);
+	gl_PointSize = 1.0;
+}
+</script>
+
+
+
+
+<script id="shader-fs" type="x-shader/x-fragment">
+void main(void) {
+	gl_FragColor = vec4(1,1,1,0);
+}
+</script>
+
+
+
+<script type="text/javascript">
+
+	var gl; // глобальная переменная для контекста WebGL
+
+    var initWebGL = function(canvas) {
+
+		try {
+			// Попытаться получить стандартный контекст. Если не получится, попробовать получить экспериментальный.
+			gl = canvas.getContext("webgl") || canvas.getContext("experimental-webgl");
+		}
+		catch(e) {}
+
+		// Если мы не получили контекст GL, завершить работу
+		if (!gl) {
+			alert("Unable to initialize WebGL. Your browser may not support it.");
+			gl = null;
+		}
+
+		return gl;
+    }
+
+
+	var getShader = function(gl, id) {
+		var shaderScript, theSource, currentChild, shader;
+
+		shaderScript = document.getElementById(id);
+
+		if (!shaderScript) {
+			return null;
+		}
+
+		theSource = "";
+		currentChild = shaderScript.firstChild;
+
+		while(currentChild) {
+			if (currentChild.nodeType == currentChild.TEXT_NODE) {
+				theSource += currentChild.textContent;
+			}
+			currentChild = currentChild.nextSibling;
+		}
+
+		// Как только элемент с указанным ID найден, его текст помещается в переменную theSource.
+
+		if (shaderScript.type == "x-shader/x-fragment") {
+			shader = gl.createShader(gl.FRAGMENT_SHADER);
+		} else if (shaderScript.type == "x-shader/x-vertex") {
+			shader = gl.createShader(gl.VERTEX_SHADER);
+		} else {
+			// неизвестный тип шейдера
+			return null;
+		}
+
+		// После того, как код для шейдера считан, мы проверяем MIME тип шейдерного объекта, чтобы определить является он вершинным (MIME type "x-shader/x-vertex") или фрагментным (MIME type "x-shader/x-fragment") шейдером, а затем создаем соответствующий тип шейдера из полученного исходного кода.
+
+		gl.shaderSource(shader, theSource);
+
+		// скомпилировать шейдерную программу
+		gl.compileShader(shader);
+
+		// Проверить успешное завершение компиляции
+		if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+			alert("An error occurred compiling the shaders: " + gl.getShaderInfoLog(shader));
+			return null;
+		}
+
+		return shader;
+	}
+
+    var shaderProgram;
+
+    var initShaders = function() {
+        var fragmentShader = getShader(gl, "shader-fs");
+        var vertexShader = getShader(gl, "shader-vs");
+
+		// создать шейдерную программу
+
+        shaderProgram = gl.createProgram();
+        gl.attachShader(shaderProgram, vertexShader);
+        gl.attachShader(shaderProgram, fragmentShader);
+        gl.linkProgram(shaderProgram);
+
+        if (!gl.getProgramParameter(shaderProgram, gl.LINK_STATUS)) {
+			alert("Unable to initialize the shader program.");
+        }
+
+        gl.useProgram(shaderProgram);
+
+        shaderProgram.vertexPositionAttribute = gl.getAttribLocation(shaderProgram, "a_position");
+        gl.enableVertexAttribArray(shaderProgram.vertexPositionAttribute);
+    }
+
+    var pointBuffer;
+
+    var initBuffers = function() {
+		pointBuffer = gl.createBuffer();
+
+
+		var vertices = [0, 0, 0];
+
+		gl.bindBuffer(gl.ARRAY_BUFFER, pointBuffer);
+		gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
+    }
+
+
+    var drawScene = function() {
+    	gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+
+		gl.bindBuffer(gl.ARRAY_BUFFER, pointBuffer);
+		gl.vertexAttribPointer(shaderProgram.vertexPositionAttribute, 3, gl.FLOAT, false, 0, 0);
+
+		gl.drawArrays(gl.POINTS, 0, 1);
+    }
+
+
+    function start() {
+        var canvas = document.getElementById("canvas");
+
+        gl = initWebGL(canvas); // инициализация контекста GL
+
+		// продолжать только если WebGL доступен и работает
+
+		if (gl) {
+			gl.clearColor(0.0, 0.0, 0.0, 1.0);                      // установить в качестве цвета очистки буфера цвета черный, полная непрозрачность
+			gl.enable(gl.DEPTH_TEST);                               // включает использование буфера глубины
+			gl.depthFunc(gl.LEQUAL);                                // определяет работу буфера глубины: более ближние объекты перекрывают дальние
+			gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);      // очистить буфер цвета и буфер глубины.
+		}
+
+        initShaders();
+        initBuffers();
+
+        drawScene();
+    }
+
+
+</script>
+
+
+</html>
