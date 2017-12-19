@@ -1,0 +1,4 @@
+from shaders.FragmentShader import frag_shader
+from shaders.VertexShader import vert_shader
+from shaders.FragmentShaderSkybox import frag_shader_skybox
+from shaders.VertexShaderSkybox import vert_shader_skybox
