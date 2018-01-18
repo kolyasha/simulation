@@ -1,0 +1,46 @@
+<html>
+<head>
+    <title>Lab 3</title>
+    <style>
+        body{margin:0;}
+        canvas{ width:100%; height: 100%;}
+    </style>
+</head>
+<body>
+    <script src="https://ajax.googleapis.com/ajax/libs/threejs/r69/three.min.js"></script>
+    <script src="http://cdnjs.cloudflare.com/ajax/libs/mathjs/1.2.0/math.min.js"></script>
+    <script src="scripts/mathFunctions.js"></script>
+    <script src="scripts/geometry.js"></script>
+    <script src="scripts/constants.js"></script>
+    <script src="scripts/thrustPD.js"></script>
+    <script src="scripts/positionCalculation.js"></script>
+    <script src="scripts/flightControl.js"></script>
+
+    <script>
+        var scene = new THREE.Scene();
+        var camera = new THREE.PerspectiveCamera( 75, window.innerWidth/window.innerHeight, 0.1, 1000 );
+        var renderer = new THREE.WebGLRenderer();
+        var copter = new Copter();
+        var clock =  new THREE.Clock()
+
+        renderer.setSize( window.innerWidth, window.innerHeight );
+        document.body.appendChild( renderer.domElement );
+
+        scene.add(copter.object);
+
+        camera.position.x -= 7;
+        camera.position.z = 5;
+        copter.object.position.z = copter.positionInertial._data[2][0];
+        camera.up.set( 0, 0, 1 );
+        camera.lookAt(new THREE.Vector3(0,0,0));
+
+        var render = function () {
+            setTimeout(function() {requestAnimationFrame( render );}, 1000/30);
+            copter.update(0.01);
+            renderer.render(scene, camera);
+        };
+
+        render();
+    </script>
+</body>
+</html>
