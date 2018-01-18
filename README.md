@@ -5,3 +5,6 @@ https://alepoydes.github.io/introduction-to-numerical-simulation/practice/render
 
 Lab2 - Моделирование волны (метод Эйлере, Рунге-Кутты, Верле)
 https://github.com/kolyasha/simulation/blob/master/lab2/Description.pdf
+
+Lab3 - Моделирование квадрокоптера
+https://github.com/kolyasha/simulation/blob/master/lab3/Description.pdf
